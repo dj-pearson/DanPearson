@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dan Pearson Portfolio Supabase Admin Authentication</title>
+    <script type="module" crossorigin src="/assets/index-Cp31dfjB.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Bo38TNmT.css">
+  
+        <script>
+          console.log("[Preview] Initializing error tracking...");
+          
+          // Create global error registry
+          window.__ERROR_REGISTRY = {
+            missingModules: new Set(),
+            missingPackages: new Set(),
+            missingComponents: new Set(),
+            runtimeErrors: new Set(),
+            
+            // Track if we've sent errors already
+            hasSentInitialErrors: false,
+            
+            // Method to get all errors as arrays
+            getErrors: function() {
+              return {
+                missingModules: Array.from(this.missingModules),
+                missingPackages: Array.from(this.missingPackages),
+                missingComponents: Array.from(this.missingComponents),
+                runtimeErrors: Array.from(this.runtimeErrors)
+              };
+            },
+            
+            // Send errors to parent window via postMessage - only if we have errors
+            sendErrorsToParent: function() {
+              try {
+                const errors = this.getErrors();
+                const hasErrors = 
+                  errors.missingModules.length > 0 || 
+                  errors.missingPackages.length > 0 || 
+                  errors.missingComponents.length > 0 ||
+                  errors.runtimeErrors.length > 0;
+                
+                if (hasErrors) {
+                  console.log("[Preview] Sending errors to parent:", errors);
+                  window.parent.postMessage({
+                    type: 'PREVIEW_ERRORS',
+                    payload: errors
+                  }, '*');
+                }
+              } catch (err) {
+                console.warn('[Preview] Failed to send errors to parent:', err);
+              }
+            }
+          };
+          
+          // Register a missing module
+          window.registerMissingModule = function(moduleName) {
+            console.log('[Preview] Registering missing module:', moduleName);
+            window.__ERROR_REGISTRY.missingModules.add(moduleName);
+            window.__ERROR_REGISTRY.sendErrorsToParent();
+          };
+          
+          window.registerMissingPackage = function(packageName) {
+            console.log('[Preview] Registering missing package:', packageName);
+            window.__ERROR_REGISTRY.missingPackages.add(packageName);
+            window.__ERROR_REGISTRY.sendErrorsToParent();
+          };
+          
+          window.registerMissingComponent = function(componentName) {
+            console.log('[Preview] Registering missing component:', componentName);
+            window.__ERROR_REGISTRY.missingComponents.add(componentName);
+            window.__ERROR_REGISTRY.sendErrorsToParent();
+          };
+          
+          // Global error handler for runtime errors
+          window.addEventListener('error', function(event) {
+            console.log('[Preview] Error event:', event.message);
+            
+            // Check if it's likely a React component error
+            if (event.message && (
+                event.message.includes("is not defined") || 
+                event.message.includes("is not a function") ||
+                event.message.includes("Cannot read properties of undefined") ||
+                event.message.includes("is not a component") ||
+                event.message.includes("failed to load") ||
+                event.message.includes("cannot find module")
+              )) {
+              // Add to error registry
+              window.__ERROR_REGISTRY.runtimeErrors.add(event.message);
+              window.__ERROR_REGISTRY.sendErrorsToParent();
+              
+              console.warn('[Preview] Runtime error caught:', event.message);
+              
+              // Create a placeholder for the missing component
+              const errorElement = document.createElement('div');
+              errorElement.style.color = 'red';
+              errorElement.style.border = '1px solid red';
+              errorElement.style.padding = '20px';
+              errorElement.style.margin = '20px';
+              errorElement.style.borderRadius = '4px';
+              errorElement.innerText = 'Error: ' + event.message;
+              
+              // Try to replace the error location with our error element
+              if (event.target && event.target !== window) {
+                const parent = event.target.parentNode;
+                if (parent) {
+                  parent.replaceChild(errorElement, event.target);
+                  event.preventDefault();
+                  return false;
+                }
+              }
+            }
+          });
+          
+          // When all resources are loaded, check for errors and send them once
+          window.addEventListener('load', function() {
+            console.log('[Preview] Window loaded, checking for errors');
+            
+            // Wait a bit for any errors to be registered
+            setTimeout(function() {
+              if (!window.__ERROR_REGISTRY.hasSentInitialErrors) {
+                window.__ERROR_REGISTRY.sendErrorsToParent();
+                window.__ERROR_REGISTRY.hasSentInitialErrors = true;
+              }
+            }, 1000);
+          });
+          
+          console.log("[Preview] Error tracking initialized");
+        </script>
+      </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
