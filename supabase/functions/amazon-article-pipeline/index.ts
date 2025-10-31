@@ -99,7 +99,7 @@ async function signRequest(
     headers: {
       'Content-Encoding': 'amz-1.0',
       'Content-Type': 'application/json; charset=utf-8',
-      // Note: Host header is NOT included - Deno/browser sets it automatically
+      'Host': host,  // MUST include Host header since we sign it
       'X-Amz-Date': timestamp,
       'X-Amz-Target': target,
       'Authorization': authorizationHeader
