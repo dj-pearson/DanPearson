@@ -12,7 +12,7 @@ const AMAZON_ENDPOINT = '/paapi5/searchitems'
 // Niches configuration
 const NICHES = ['home office', 'travel gear', 'fitness']
 
-// AWS Signature Version 4 Implementation
+// AWS Signature Version 4 Implementation for PA-API v5
 async function signRequest(
   method: string,
   host: string,
@@ -22,7 +22,8 @@ async function signRequest(
   accessKey: string,
   secretKey: string,
   region: string,
-  service: string
+  service: string,
+  target: string
 ): Promise<{ headers: Record<string, string>; timestamp: string }> {
   const algorithm = 'AWS4-HMAC-SHA256'
   const now = new Date()
@@ -50,10 +51,10 @@ async function signRequest(
       .join('')
   }
 
-  // Create canonical request
+  // Create canonical request with PA-API required headers
   const payloadHash = await hash(payload)
-  const canonicalHeaders = `content-type:application/json; charset=utf-8\nhost:${host}\nx-amz-date:${timestamp}\n`
-  const signedHeaders = 'content-type;host;x-amz-date'
+  const canonicalHeaders = `content-encoding:amz-1.0\ncontent-type:application/json; charset=utf-8\nhost:${host}\nx-amz-date:${timestamp}\nx-amz-target:${target}\n`
+  const signedHeaders = 'content-encoding;content-type;host;x-amz-date;x-amz-target'
   const canonicalRequest = `${method}\n${path}\n${queryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
 
   // Create string to sign
@@ -77,10 +78,12 @@ async function signRequest(
 
   return {
     headers: {
+      'Content-Encoding': 'amz-1.0',
       'Content-Type': 'application/json; charset=utf-8',
+      'Host': host,
       'X-Amz-Date': timestamp,
-      'Authorization': authorizationHeader,
-      'Host': host
+      'X-Amz-Target': target,
+      'Authorization': authorizationHeader
     },
     timestamp
   }
@@ -107,6 +110,8 @@ async function searchAmazonProducts(keywords: string, itemCount = 10) {
   })
 
   try {
+    const target = 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems'
+
     const { headers, timestamp } = await signRequest(
       'POST',
       AMAZON_HOST,
@@ -116,7 +121,8 @@ async function searchAmazonProducts(keywords: string, itemCount = 10) {
       AMAZON_ACCESS_KEY,
       AMAZON_SECRET_KEY,
       AMAZON_REGION,
-      'ProductAdvertisingAPI'
+      'ProductAdvertisingAPIv1',
+      target
     )
 
     console.log(`[DEBUG] Making request with timestamp: ${timestamp}`)
