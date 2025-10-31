@@ -57,10 +57,27 @@ async function signRequest(
   const signedHeaders = 'content-encoding;content-type;host;x-amz-date;x-amz-target'
   const canonicalRequest = `${method}\n${path}\n${queryString}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`
 
+  // Debug logging
+  console.log('[DEBUG] Canonical Request:', JSON.stringify({
+    method,
+    path,
+    queryString,
+    canonicalHeaders: canonicalHeaders.split('\n'),
+    signedHeaders,
+    payloadHash
+  }))
+
   // Create string to sign
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
   const canonicalRequestHash = await hash(canonicalRequest)
   const stringToSign = `${algorithm}\n${timestamp}\n${credentialScope}\n${canonicalRequestHash}`
+
+  console.log('[DEBUG] Signing details:', JSON.stringify({
+    algorithm,
+    timestamp,
+    credentialScope,
+    canonicalRequestHash
+  }))
 
   // Calculate signature
   let signingKey = await hmac(`AWS4${secretKey}`, dateStamp)
@@ -76,11 +93,13 @@ async function signRequest(
   // Create authorization header
   const authorizationHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 
+  console.log('[DEBUG] Generated signature:', signature.slice(0, 20) + '...')
+
   return {
     headers: {
       'Content-Encoding': 'amz-1.0',
       'Content-Type': 'application/json; charset=utf-8',
-      'Host': host,
+      // Note: Host header is NOT included - Deno/browser sets it automatically
       'X-Amz-Date': timestamp,
       'X-Amz-Target': target,
       'Authorization': authorizationHeader
@@ -92,6 +111,14 @@ async function signRequest(
 // Search Amazon products using PA-API 5
 async function searchAmazonProducts(keywords: string, itemCount = 10) {
   console.log(`[INFO] Searching Amazon for: ${keywords}`)
+
+  // Validate credentials
+  console.log('[DEBUG] Credentials check:', {
+    accessKeyLength: AMAZON_ACCESS_KEY?.length,
+    secretKeyLength: AMAZON_SECRET_KEY?.length,
+    partnerTag: AMAZON_PARTNER_TAG,
+    accessKeyPrefix: AMAZON_ACCESS_KEY?.substring(0, 4) + '...'
+  })
 
   const payload = JSON.stringify({
     Keywords: keywords,
@@ -108,6 +135,8 @@ async function searchAmazonProducts(keywords: string, itemCount = 10) {
     Marketplace: 'www.amazon.com',
     ItemCount: itemCount
   })
+
+  console.log('[DEBUG] Request payload:', payload.substring(0, 100) + '...')
 
   try {
     const target = 'com.amazon.paapi5.v1.ProductAdvertisingAPIv1.SearchItems'
@@ -126,6 +155,7 @@ async function searchAmazonProducts(keywords: string, itemCount = 10) {
     )
 
     console.log(`[DEBUG] Making request with timestamp: ${timestamp}`)
+    console.log('[DEBUG] Request headers:', JSON.stringify(headers, null, 2))
 
     const response = await fetch(`https://${AMAZON_HOST}${AMAZON_ENDPOINT}`, {
       method: 'POST',
@@ -133,9 +163,12 @@ async function searchAmazonProducts(keywords: string, itemCount = 10) {
       body: payload
     })
 
+    console.log('[DEBUG] Response status:', response.status)
     const responseText = await response.text()
+    console.log('[DEBUG] Response body:', responseText.substring(0, 200))
 
     if (!response.ok) {
+      console.error('[ERROR] Amazon API rejected request')
       throw new Error(`Amazon API error: ${response.status} ${responseText}`)
     }
 
