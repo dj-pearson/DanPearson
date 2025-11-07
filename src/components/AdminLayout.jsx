@@ -12,7 +12,8 @@ import {
   X,
   Shield,
   Store,
-  Bot
+  Bot,
+  BarChart3
 } from 'lucide-react'
 
 const AdminLayout = ({ children }) => {
@@ -23,6 +24,7 @@ const AdminLayout = ({ children }) => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+    { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
     { icon: FileText, label: 'Blog Manager', path: '/admin/blog' },
     { icon: Shield, label: 'Users', path: '/admin/users' },
     { icon: Store, label: 'Store (Coming Soon)', path: '/admin/store', disabled: true },

@@ -19,6 +19,8 @@ import BlogEditor from './pages/admin/BlogEditor'
 import SecuritySettings from './pages/admin/SecuritySettings'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminUsers from './pages/admin/AdminUsers'
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard'
+import OAuthCallback from './pages/admin/OAuthCallback'
 import PasswordReset from './components/PasswordReset'
 import UserManager from './components/admin/UserManager'
 
@@ -32,7 +34,9 @@ function App() {
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/reset-password" element={<PasswordReset />} />
+              <Route path="/admin/analytics/oauth-callback" element={<OAuthCallback />} />
               <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/analytics" element={<AdminRoute><AnalyticsDashboard /></AdminRoute>} />
               <Route path="/admin/blog" element={<AdminRoute><BlogManager /></AdminRoute>} />
               <Route path="/admin/blog/new" element={<AdminRoute><BlogEditor /></AdminRoute>} />
               <Route path="/admin/blog/edit/:id" element={<AdminRoute><BlogEditor /></AdminRoute>} />
